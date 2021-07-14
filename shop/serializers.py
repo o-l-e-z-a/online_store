@@ -1,24 +1,26 @@
 from rest_framework import serializers
+
 from .models import Category, User, Product, Address, Cart
+
 from djoser.serializers import UserCreateSerializer
 
 
 class RegistrationSerializer(UserCreateSerializer):
-    """ Сериализатор для регистрации"""
+    """ Сериализатор для регистрации """
 
     class Meta(UserCreateSerializer.Meta):
         fields = ('email', 'telephone', 'first_name', 'last_name', 'date_birthday', 'password')
 
 
 class AddressReadUpdateDeleteSerializer(serializers.ModelSerializer):
-    """ Сериализатор для удаления, обновления,просмотра адреса"""
+    """ Сериализатор для удаления, обновления,просмотра адреса """
     class Meta:
         model = Address
         exclude = ['id', 'customer']
 
 
 class AddressAddSerializer(serializers.ModelSerializer):
-    """ Сериализатор для создание адреса"""
+    """ Сериализатор для создание адреса """
 
     class Meta:
         model = Address
@@ -36,21 +38,21 @@ class AddressAddSerializer(serializers.ModelSerializer):
 
 
 class FilterCategoryListSerializer(serializers.ListSerializer):
-    """Фильтр категорий, только родители"""
+    """ Фильтр категорий, только родители """
     def to_representation(self, data):
-        data = data.filter(parent=None).prefetch_related('children', 'parent')
+        data = data.filter(parent=None)
         return super().to_representation(data)
 
 
 class RecursiveSerializer(serializers.Serializer):
-    """Вывод рекурсивно потомком"""
+    """ Вывод рекурсивно потомков """
     def to_representation(self, value):
         serializer = self.parent.parent.__class__(value, context=self.context)
         return serializer.data
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    """Вывод категорий"""
+    """ Сериализатор для вывода категорий """
     children = RecursiveSerializer(many=True)
 
     class Meta:
@@ -93,7 +95,7 @@ class CartCreateUpdateSerializer(serializers.ModelSerializer):
         fields = ('quantity',)
 
     def create(self, validated_data):
-        """ метод для добавленя товара"""
+        """ добавление товара"""
         cart = Cart.objects.filter(
             customer=validated_data.get('customer'), product=validated_data.get('product')
         ).first()
@@ -106,7 +108,7 @@ class CartCreateUpdateSerializer(serializers.ModelSerializer):
             return Cart.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        """ метод для проверки количествао товара перед обновлением"""
+        """ обновление кол-во товара """
         quantity = validated_data.get('quantity', 0)
         if quantity > 0:
             instance.quantity = quantity
@@ -117,11 +119,10 @@ class CartCreateUpdateSerializer(serializers.ModelSerializer):
 
 
 class CartReadSerializer(serializers.ModelSerializer):
-    """ Чтение корзины"""
+    """ Сериализатор для вывода корзины"""
     product = ProductForCategoryListSerializer(read_only=True)
     sum = serializers.DecimalField(max_digits=12, decimal_places=2)
 
     class Meta:
         model = Cart
         fields = ('id', 'product', 'quantity', 'sum')
-

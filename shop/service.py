@@ -1,6 +1,8 @@
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+
 from django.contrib.postgres.search import SearchVector, SearchRank, SearchQuery
+
 from .models import Product
 
 

@@ -1,10 +1,9 @@
-import os
-
 from django.db.models import F, DecimalField, ExpressionWrapper, Sum
 from django.shortcuts import get_object_or_404
 
 from rest_framework import permissions, filters
-from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet, ViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet, ViewSet
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.response import Response
 
 from .serializers import (
@@ -37,19 +36,19 @@ class AddressModelViewSet(ModelViewSet):
         serializer.save(customer=self.request.user)
 
 
-class CategoryLIstViewSet(ReadOnlyModelViewSet):
+class CategoryLIstViewSet(ListModelMixin, GenericViewSet):
     """ Вывод списка категорий """
     queryset = Category.objects.all().prefetch_related('children').order_by('-sort_order')
     serializer_class = CategorySerializer
 
 
-class ProductDetailViewSet(ReadOnlyModelViewSet):
+class ProductDetailViewSet(RetrieveModelMixin, GenericViewSet):
     """ Просмотр отдельного товара """
     serializer_class = ProductDetailSerializer
     queryset = Product.objects.all().select_related('brand').prefetch_related('category')
 
 
-class ProductForCategoryViewSet(ReadOnlyModelViewSet):
+class ProductForCategoryViewSet(ListModelMixin, GenericViewSet):
     """ Просмотр всех товаров, принадлежащих к отдельной категории"""
     serializer_class = ProductForCategoryListSerializer
     pagination_class = PaginationProductForCategory
@@ -61,7 +60,7 @@ class ProductForCategoryViewSet(ReadOnlyModelViewSet):
         return Product.objects.select_related('category').filter(category__id=self.kwargs['pk'])
 
 
-class SearchView(ReadOnlyModelViewSet):
+class SearchView(ListModelMixin, GenericViewSet):
     """ Поиск по товарам """
     serializer_class = ProductDetailSerializer
     pagination_class = PaginationSearch
@@ -73,6 +72,7 @@ class SearchView(ReadOnlyModelViewSet):
 
 
 class CartModelViewSet(ModelViewSet):
+    """ CRUD корзины """
     permission_classes = [permissions.IsAuthenticated]
 
     def get_serializer_class(self):
@@ -91,6 +91,7 @@ class CartModelViewSet(ModelViewSet):
 
 
 class ShortCartModelViewSet(ViewSet):
+    """ Краткая корзина """
     permission_classes = [permissions.IsAuthenticated]
 
     def list(self, request):

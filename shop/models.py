@@ -2,17 +2,14 @@ from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.base_user import BaseUserManager
-from datetime import datetime
+from django.conf import settings
 
 
 class UserManager(BaseUserManager):
-    """ Расширение встроенного UserManager"""
+    """ Расширение встроенного UserManager """
     use_in_migrations = True
 
     def _create_user(self, email, password, telephone, first_name, last_name, **extra_fields):
-        """
-        Creates and saves a User with the given email and password.
-        """
         if not email:
             raise ValueError('The given email must be set')
         email = self.normalize_email(email)
@@ -64,7 +61,7 @@ class User(AbstractUser):
 
 
 class Address(models.Model):
-    customer = models.ForeignKey(User, verbose_name='Покупатель', on_delete=models.CASCADE)
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='Покупатель', on_delete=models.CASCADE)
     city = models.CharField('Город', max_length=32)
     street_name = models.CharField('Название улицы', max_length=64)
     street_type = models.CharField('Тип города', max_length=16)
@@ -126,7 +123,7 @@ class Product(models.Model):
 
 
 class Cart(models.Model):
-    customer = models.ForeignKey(User, verbose_name='Покупатель', on_delete=models.CASCADE)
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='Покупатель', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, verbose_name='Товар', on_delete=models.CASCADE)
     quantity = models.IntegerField('Количество')
     date_add = models.DateTimeField('Дата заказа', auto_now=True, blank=True)
