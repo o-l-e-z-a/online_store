@@ -1,6 +1,7 @@
 from django.contrib import admin
-from .models import Category, Brand, Product, Address, User, Cart
 from django.contrib.auth.admin import UserAdmin as OrigUserAdmin
+
+from .models import Category, Brand, Product, Address, User, Cart
 
 
 @admin.register(Brand)

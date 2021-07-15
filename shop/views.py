@@ -30,7 +30,7 @@ class AddressModelViewSet(ModelViewSet):
             return AddressReadUpdateDeleteSerializer
 
     def get_queryset(self):
-        return Address.objects.filter(customer=self.request.user.pk).select_related('user')
+        return Address.objects.filter(customer=self.request.user.pk).select_related('customer')
 
     def perform_create(self, serializer):
         serializer.save(customer=self.request.user)
