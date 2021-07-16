@@ -57,7 +57,7 @@ class ProductForCategoryViewSet(ListModelMixin, GenericViewSet):
     ordering = ['id']
 
     def get_queryset(self):
-        return Product.objects.select_related('category').filter(category__id=self.kwargs['pk'])
+        return Product.objects.select_related('brand').prefetch_related('category').filter(category__id=self.kwargs['pk'])
 
 
 class SearchView(ListModelMixin, GenericViewSet):

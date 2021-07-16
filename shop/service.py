@@ -34,12 +34,14 @@ class PaginationSearch(Pagination):
 def product_search(query_params):
     """ Улучшенный поиск с помощью расширения postgres"""
     if query_params:
-        search_vector = SearchVector('name', weight='A') + SearchVector('brand__name', weight='B') \
-                        + SearchVector('category__name', weight='B')
+        search_vector = SearchVector('name', weight='A') +\
+                        SearchVector('brand__name', weight='B') +\
+                        SearchVector('category__name', weight='B') + \
+                        SearchVector('category__parent__name', weight='C')
         search_query = SearchQuery(query_params)
         results = Product.objects.select_related('brand').prefetch_related('category').annotate(
             rank=SearchRank(search_vector, search_query)
-        ).filter(rank__gte=0.2).order_by('-rank')
+        ).filter(rank__gte=0.1).order_by('-rank')
     else:
         results = Product.objects.select_related('brand').prefetch_related('category').all()
     return results

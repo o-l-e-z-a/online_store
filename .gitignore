@@ -7,3 +7,4 @@ shop/*.json
 *pyc
 Procfile
 runtime.txt
+/.coverage
