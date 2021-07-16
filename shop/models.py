@@ -126,7 +126,7 @@ class Cart(models.Model):
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='Покупатель', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, verbose_name='Товар', on_delete=models.CASCADE)
     quantity = models.IntegerField('Количество')
-    date_add = models.DateTimeField('Дата заказа', auto_now=True, blank=True)
+    date_add = models.DateTimeField('Дата заказа', auto_now_add=True, blank=True)
 
     def __str__(self):
         return f'{self.customer}, {self.product.name} : {self.quantity}'
