@@ -1,9 +1,10 @@
+from django.db.models import ExpressionWrapper, F, DecimalField, Sum
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from django.contrib.postgres.search import SearchVector, SearchRank, SearchQuery
 
-from .models import Product
+from .models import Product, Cart
 
 
 class Pagination(PageNumberPagination):
@@ -46,3 +47,13 @@ def product_search(query_params):
         results = Product.objects.select_related('brand').prefetch_related('category').all()
     return results
 
+
+def get_product_sum(user):
+    return Cart.objects.filter(customer=user, order__isnull=True).select_related('product').annotate(
+        sum=ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField()))
+
+
+def get_products_total_sum(user):
+    return get_product_sum(user).aggregate(
+        final_cost=Sum('sum', output_field=DecimalField()), count=Sum('quantity')
+    )

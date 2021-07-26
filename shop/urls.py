@@ -20,5 +20,8 @@ urlpatterns = format_suffix_patterns([
     path('cart/<int:pk>/update/', CartModelViewSet.as_view({'post': 'partial_update'}), name='cart_update'),
     path('cart/<int:pk>/delete/', CartModelViewSet.as_view({'delete': 'destroy'}), name='cart_delete'),
     path('short-cart/', ShortCartModelViewSet.as_view({'get': 'list'}), name='short_cart'),
+    path('order/<int:pk>/', OrderViewSet.as_view({'get': 'retrieve'}), name='order_detail'),
+    path('orders/', OrderViewSet.as_view({'get': 'list'}), name='order_list'),
+    path('order/add/', OrderViewSet.as_view({'post': 'create'}), name='order_add'),
 ])
 

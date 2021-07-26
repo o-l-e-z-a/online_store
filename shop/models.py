@@ -126,7 +126,9 @@ class Cart(models.Model):
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='Покупатель', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, verbose_name='Товар', on_delete=models.CASCADE)
     quantity = models.IntegerField('Количество')
-    date_add = models.DateTimeField('Дата заказа', auto_now_add=True, blank=True)
+    order = models.ForeignKey(
+        'Order', verbose_name='Заказ', on_delete=models.CASCADE, related_name='items', null=True, blank=True
+    )
 
     def __str__(self):
         return f'{self.customer}, {self.product.name} : {self.quantity}'
@@ -134,3 +136,20 @@ class Cart(models.Model):
     class Meta:
         verbose_name = "Корзина"
         verbose_name_plural = "Корзины"
+
+
+class Order(models.Model):
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='Покупатель', on_delete=models.CASCADE)
+    address = models.ForeignKey(Address, verbose_name='Адрес', on_delete=models.CASCADE)
+    price = models.DecimalField('Стоимость', max_digits=12, decimal_places=2)
+    date_add = models.DateTimeField('Дата заказа', auto_now_add=True)
+    paid = models.BooleanField('Оплата', default=False)
+
+    def __str__(self):
+        return f'{self.id} {self.price} {self.paid}'
+
+    class Meta:
+        verbose_name = 'Заказ'
+        verbose_name_plural = 'Заказы'
+
+

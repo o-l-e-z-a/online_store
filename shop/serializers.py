@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from .models import Category, User, Product, Address, Cart
+from .models import Category, User, Product, Address, Cart, Order
+from .tasks import cart_created
 
 from djoser.serializers import UserCreateSerializer
 
@@ -103,7 +104,9 @@ class CartCreateUpdateSerializer(serializers.ModelSerializer):
             cart.quantity += 1
             cart.save()
             return cart
+
         else:
+            # cart_created.delay(cart.id)
             validated_data.update(quantity=1)
             return Cart.objects.create(**validated_data)
 
@@ -125,4 +128,42 @@ class CartReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cart
-        fields = ('id', 'product', 'quantity', 'sum')
+        fields = ('id', 'product', 'quantity', 'sum', 'order')
+
+
+class OrderCreateSerializer(serializers.ModelSerializer):
+    """ Сериализатор для вывода корзины"""
+
+    class Meta:
+        model = Order
+        exclude = ['price', 'customer']
+
+    def create(self, validated_data):
+        order = Order.objects.create(**validated_data)
+        # print(order)
+        for cart in Cart.objects.filter(customer=validated_data.get('customer'), order__isnull=True):
+            cart.order = order
+            cart.save()
+        return order
+
+
+class OrderCartSerializer(serializers.ModelSerializer):
+    sum = serializers.SerializerMethodField()
+    product = serializers.SlugRelatedField(slug_field='name', read_only=True)
+
+    class Meta:
+        model = Cart
+        fields = ('product', 'quantity', 'sum')
+
+    def get_sum(self, obj):
+        return obj.quantity * obj.product.price
+
+
+class OrderDetailSerializer(serializers.ModelSerializer):
+    address = AddressReadUpdateDeleteSerializer(read_only=True)
+    items = OrderCartSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ('id', 'address', 'items', 'price', 'paid')
+

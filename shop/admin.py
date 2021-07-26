@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as OrigUserAdmin
 
-from .models import Category, Brand, Product, Address, User, Cart
+from .models import Category, Brand, Product, Address, User, Cart, Order
 
 
 @admin.register(Brand)
@@ -29,13 +29,6 @@ class CategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {"url": ("name",)}
 
 
-@admin.register(Cart)
-class CartAdmin(admin.ModelAdmin):
-    list_display = ("id", "customer", "quantity", "product")
-    list_filter = ("customer", "product")
-    search_fields = ("product__name", )
-
-
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
     list_display = ("id", "customer", "city", "street_name", "street_type", "house", "contact_phone", "contact_fio")
@@ -50,3 +43,19 @@ class UserAdmin(OrigUserAdmin):
     list_display = ("id", "telephone", "date_birthday", "first_name", "last_name", "email", "is_staff", "is_superuser")
     save_on_top = True
     save_as = True
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ("id", "customer", "address", "price", "paid")
+    list_filter = ("customer", "paid")
+
+
+@admin.register(Cart)
+class CartAdmin(admin.ModelAdmin):
+    list_display = ("id", "customer", "quantity", "product", "order")
+    list_filter = ("customer", )
+    search_fields = ("product__name",)
+
+
+

@@ -1,6 +1,6 @@
 from django.db.models import F, DecimalField, ExpressionWrapper, Sum
 from django.shortcuts import get_object_or_404
-
+from django.core.mail import send_mail
 from rest_framework import permissions, filters
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, ViewSet
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
@@ -13,10 +13,14 @@ from .serializers import (
     ProductDetailSerializer,
     ProductForCategoryListSerializer,
     CartReadSerializer,
-    CartCreateUpdateSerializer
+    CartCreateUpdateSerializer,
+    OrderDetailSerializer,
+    OrderCreateSerializer,
 )
-from .service import PaginationProductForCategory, PaginationSearch, product_search
-from .models import Address, Category, Product, Cart
+from .service import PaginationProductForCategory, PaginationSearch, product_search, get_product_sum, \
+    get_products_total_sum
+from .models import Address, Category, Product, Cart, Order
+from .tasks import cart_created
 
 
 class AddressModelViewSet(ModelViewSet):
@@ -82,11 +86,11 @@ class CartModelViewSet(ModelViewSet):
             return CartReadSerializer
 
     def get_queryset(self):
-        return Cart.objects.filter(customer=self.request.user).select_related('product').annotate(
-            sum=ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField()))
+        return get_product_sum(self.request.user)
 
     def perform_create(self, serializer):
         product = get_object_or_404(Product, pk=self.kwargs['pk'])
+        cart_created.delay(self.kwargs['pk'])
         serializer.save(customer=self.request.user, product=product)
 
 
@@ -95,11 +99,29 @@ class ShortCartModelViewSet(ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def list(self, request):
-        queryset = Cart.objects.filter(customer=request.user).select_related('product').annotate(
-            summa=(ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField()))).aggregate(
-            sum=Sum('summa', output_field=DecimalField()), count=Sum('quantity'))
+        queryset = get_products_total_sum(self.request.user)
         return Response({
-            'sum': queryset['sum'],
+            'final_cost': queryset['final_cost'],
             'count': queryset['count']
         })
+
+
+class OrderViewSet(ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = OrderDetailSerializer
+
+    def get_queryset(self):
+        return Order.objects.filter(customer=self.request.user).select_related('address', 'customer').\
+            prefetch_related('items', 'items__product')
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return OrderCreateSerializer
+        else:
+            return OrderDetailSerializer
+
+    def perform_create(self, serializer):
+        total_sum = get_products_total_sum(self.request.user)['final_cost']
+        serializer.save(customer=self.request.user, price=total_sum)
+
 
