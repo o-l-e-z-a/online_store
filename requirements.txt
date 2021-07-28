@@ -38,4 +38,5 @@ urllib3==1.26.6
 whitenoise==5.1.0
 zipp==3.4.1
 
-celery==4.4.0
+celery>=5.1.2
+braintree>=4.11.0

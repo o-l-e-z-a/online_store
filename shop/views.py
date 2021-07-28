@@ -1,4 +1,4 @@
-from django.db.models import F, DecimalField, ExpressionWrapper, Sum
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
 from rest_framework import permissions, filters
@@ -18,9 +18,27 @@ from .serializers import (
     OrderCreateSerializer,
 )
 from .service import PaginationProductForCategory, PaginationSearch, product_search, get_product_sum, \
-    get_products_total_sum
+    get_products_total_sum, get_sale
 from .models import Address, Category, Product, Cart, Order
 from .tasks import cart_created
+
+from coupons.models import Coupon
+
+# from django.conf import settings
+# from django.http import HttpResponse
+# from django.template.loader import render_to_string
+# import cairosvg
+# import weasyprint
+
+
+# @staff_member_required
+# def admin_order_pdf(request, order_id):
+#     order = get_object_or_404(Order, id=order_id)
+#     html = render_to_string('orders/order/pdf.html', {'order': order})
+#     response = HttpResponse(content_type='application/pdf')
+#     response['Content-Disposition'] = 'filename="order_{}.pdf"'.format(order.id)
+#     weasyprint.HTML(string=html).write_pdf(response,stylesheets=[weasyprint.CSS(settings.STATIC_ROOT + 'css/pdf.css')])
+#     return response
 
 
 class AddressModelViewSet(ModelViewSet):
@@ -61,7 +79,8 @@ class ProductForCategoryViewSet(ListModelMixin, GenericViewSet):
     ordering = ['id']
 
     def get_queryset(self):
-        return Product.objects.select_related('brand').prefetch_related('category').filter(category__id=self.kwargs['pk'])
+        return Product.objects.select_related('brand').prefetch_related('category').filter(
+            category__id=self.kwargs['pk'])
 
 
 class SearchView(ListModelMixin, GenericViewSet):
@@ -111,7 +130,7 @@ class OrderViewSet(ModelViewSet):
     serializer_class = OrderDetailSerializer
 
     def get_queryset(self):
-        return Order.objects.filter(customer=self.request.user).select_related('address', 'customer').\
+        return Order.objects.filter(customer=self.request.user).select_related('address', 'customer'). \
             prefetch_related('items', 'items__product')
 
     def get_serializer_class(self):
@@ -122,6 +141,14 @@ class OrderViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         total_sum = get_products_total_sum(self.request.user)['final_cost']
-        serializer.save(customer=self.request.user, price=total_sum)
-
-
+        coupon_id = self.request.session.get('coupon_id')
+        try:
+            coupon = Coupon.objects.get(pk=coupon_id)
+        except Coupon.DoesNotExist:
+            sale = 0
+            serializer.save(customer=self.request.user, price=total_sum)
+        else:
+            sale = get_sale(coupon, total_sum)
+            final_price = total_sum - sale
+            serializer.save(customer=self.request.user, price=final_price, coupon=coupon, discount=coupon.discount)
+        self.request.session['order_id'] = serializer.data.get('id')

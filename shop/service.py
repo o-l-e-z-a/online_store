@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db.models import ExpressionWrapper, F, DecimalField, Sum
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -57,3 +59,7 @@ def get_products_total_sum(user):
     return get_product_sum(user).aggregate(
         final_cost=Sum('sum', output_field=DecimalField()), count=Sum('quantity')
     )
+
+
+def get_sale(coupon, total_sum):
+    return (coupon.discount / Decimal('100')) * total_sum

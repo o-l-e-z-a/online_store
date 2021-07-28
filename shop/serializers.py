@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from .models import Category, User, Product, Address, Cart, Order
@@ -98,7 +100,7 @@ class CartCreateUpdateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """ добавление товара"""
         cart = Cart.objects.filter(
-            customer=validated_data.get('customer'), product=validated_data.get('product')
+            customer=validated_data.get('customer'), product=validated_data.get('product'), order__isnull=True
         ).first()
         if cart:
             cart.quantity += 1
@@ -156,14 +158,17 @@ class OrderCartSerializer(serializers.ModelSerializer):
         fields = ('product', 'quantity', 'sum')
 
     def get_sum(self, obj):
-        return obj.quantity * obj.product.price
+        total_sum = obj.quantity * obj.product.price
+        return total_sum - total_sum * obj.order.discount / Decimal('100')
 
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     address = AddressReadUpdateDeleteSerializer(read_only=True)
     items = OrderCartSerializer(many=True, read_only=True)
+    # sale = serializers.DecimalField(max_digits=12, decimal_places=2)
+    # total_price = serializers.DecimalField(max_digits=12, decimal_places=2)
 
     class Meta:
         model = Order
-        fields = ('id', 'address', 'items', 'price', 'paid')
+        fields = ('id', 'address', 'items', 'discount', 'price', 'paid')
 

@@ -1,8 +1,11 @@
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.base_user import BaseUserManager
 from django.conf import settings
+
+from coupons.models import Coupon
 
 
 class UserManager(BaseUserManager):
@@ -143,7 +146,14 @@ class Order(models.Model):
     address = models.ForeignKey(Address, verbose_name='Адрес', on_delete=models.CASCADE)
     price = models.DecimalField('Стоимость', max_digits=12, decimal_places=2)
     date_add = models.DateTimeField('Дата заказа', auto_now_add=True)
+    braintree_id = models.CharField(max_length=150, blank=True)
     paid = models.BooleanField('Оплата', default=False)
+    coupon = models.ForeignKey(Coupon,
+                               related_name='orders',
+                               null=True,
+                               blank=True,
+                               on_delete=models.SET_NULL)
+    discount = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
 
     def __str__(self):
         return f'{self.id} {self.price} {self.paid}'

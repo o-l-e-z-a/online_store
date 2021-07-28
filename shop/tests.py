@@ -240,7 +240,7 @@ class ShopTests(APITestCase):
         response = self.client.get(reverse('short_cart'), format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['count'], 2)
-        self.assertEqual(response.data['sum'], Decimal('70.00'))
+        self.assertEqual(response.data['final_cost'], Decimal('70.00'))
 
     def test_registration(self):
         response = self.client.post(r'http://127.0.0.1:8000/auth/users/', {

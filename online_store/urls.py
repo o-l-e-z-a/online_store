@@ -27,6 +27,8 @@ urlpatterns = [
     path('api/', include('shop.urls')),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
+    path('payment/', include('payment.urls')),
+    path('coupons/', include('coupons.urls')),
 ]
 
 urlpatterns += doc_urls

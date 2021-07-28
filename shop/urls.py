@@ -2,7 +2,9 @@ from django.urls import path
 
 from rest_framework.urlpatterns import format_suffix_patterns
 
-from .views import *
+from .views import AddressModelViewSet, CartModelViewSet, CategoryLIstViewSet, ProductDetailViewSet, \
+    ProductForCategoryViewSet, SearchView, ShortCartModelViewSet, OrderViewSet
+
 
 
 urlpatterns = format_suffix_patterns([
@@ -23,5 +25,8 @@ urlpatterns = format_suffix_patterns([
     path('order/<int:pk>/', OrderViewSet.as_view({'get': 'retrieve'}), name='order_detail'),
     path('orders/', OrderViewSet.as_view({'get': 'list'}), name='order_list'),
     path('order/add/', OrderViewSet.as_view({'post': 'create'}), name='order_add'),
+    # path('admin/order/<int:order_id>/pdf/', admin_order_pdf, name='admin_order_pdf'),
 ])
+
+
 
