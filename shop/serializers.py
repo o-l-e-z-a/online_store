@@ -3,7 +3,8 @@ from decimal import Decimal
 from rest_framework import serializers
 
 from .models import Category, User, Product, Address, Cart, Order
-from .tasks import cart_created
+from .recommender import Recommender
+from .tasks import order_created
 
 from djoser.serializers import UserCreateSerializer
 
@@ -83,10 +84,18 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     """ Сериализатор для просмотра отдельных товаров"""
     category = CategoryListSerializer(read_only=True, many=True)
     brand = serializers.SlugRelatedField(slug_field='name', read_only=True)
+    recommended = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = ('id', 'category', 'brand', 'name', 'description', 'price', 'recommended')
+
+    def get_recommended(self, obj):
+        """ получение рекомендуемых товаров"""
+        r = Recommender()
+        recommended_products = r.suggest_products_for([obj, Product.objects.get(pk=355299)], 4)
+        serializer = ProductForCategoryListSerializer(recommended_products, many=True)
+        return serializer.data
 
 
 class CartCreateUpdateSerializer(serializers.ModelSerializer):
@@ -106,7 +115,6 @@ class CartCreateUpdateSerializer(serializers.ModelSerializer):
             cart.quantity += 1
             cart.save()
             return cart
-
         else:
             # cart_created.delay(cart.id)
             validated_data.update(quantity=1)
@@ -134,7 +142,7 @@ class CartReadSerializer(serializers.ModelSerializer):
 
 
 class OrderCreateSerializer(serializers.ModelSerializer):
-    """ Сериализатор для вывода корзины"""
+    """ Сериализатор для создания заказа"""
 
     class Meta:
         model = Order
@@ -142,14 +150,22 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         order = Order.objects.create(**validated_data)
-        # print(order)
-        for cart in Cart.objects.filter(customer=validated_data.get('customer'), order__isnull=True):
+        r = Recommender()
+        products = []
+        for cart in Cart.objects.select_related('product', 'customer').filter(
+                customer=validated_data.get('customer'), order__isnull=True
+        ):
+            products.append(cart.product)
             cart.order = order
             cart.save()
+        user_id = order.customer.pk
+        order_created.delay(order.pk, user_id)
+        r.products_bought(products)
         return order
 
 
 class OrderCartSerializer(serializers.ModelSerializer):
+    """ Сериализатор для просмотра заказанных товаров"""
     sum = serializers.SerializerMethodField()
     product = serializers.SlugRelatedField(slug_field='name', read_only=True)
 
@@ -162,11 +178,10 @@ class OrderCartSerializer(serializers.ModelSerializer):
         return total_sum - total_sum * obj.order.discount / Decimal('100')
 
 
-class OrderDetailSerializer(serializers.ModelSerializer):
+class OrderReadSerializer(serializers.ModelSerializer):
+    """ Сериализатор для просмотра заказа"""
     address = AddressReadUpdateDeleteSerializer(read_only=True)
     items = OrderCartSerializer(many=True, read_only=True)
-    # sale = serializers.DecimalField(max_digits=12, decimal_places=2)
-    # total_price = serializers.DecimalField(max_digits=12, decimal_places=2)
 
     class Meta:
         model = Order

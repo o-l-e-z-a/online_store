@@ -1,17 +1,23 @@
 import os
 
+from braintree import Configuration, Environment
+
+from .locale_settings import (EMAIL_HOST_USER,
+                              EMAIL_HOST_PASSWORD,
+                              BRAINTREE_PRIVATE_KEY,
+                              BRAINTREE_MERCHANT_ID,
+                              BRAINTREE_PUBLIC_KEY
+                              )
+
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 SECRET_KEY = os.getenv('SECRET_KEY')
-
 
 DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -29,6 +35,8 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     'shop',
+    'payment',
+    'coupons'
 ]
 
 MIDDLEWARE = [
@@ -62,7 +70,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'online_store.wsgi.application'
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -76,7 +83,6 @@ DATABASES = {
 
 #  указываем модель пользователя
 AUTH_USER_MODEL = 'shop.User'
-
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -93,7 +99,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 LANGUAGE_CODE = 'ru'
 
 TIME_ZONE = 'UTC'
@@ -103,7 +108,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
@@ -123,7 +127,7 @@ DJOSER = {
     'ACTIVATION_URL': '#/activate/{uid}/{token}',
     'SEND_ACTIVATION_EMAIL': False,
     'SERIALIZERS': {
-    'user_create': 'shop.serializers.RegistrationSerializer',
+        'user_create': 'shop.serializers.RegistrationSerializer',
     },
 }
 SITE_ID = 1
@@ -132,3 +136,30 @@ INTERNAL_IPS = [
     '127.0.0.1',
 ]
 
+
+# подлючение SMTP-сервера
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+
+# подлючение редис
+REDIS_HOST = '127.0.0.1'
+REDIS_PORT = '6379'
+REDIS_DB = 1
+# подлючение системы оплаты
+
+CELERY_BROKER_URL = 'redis://' + REDIS_HOST + ':' + REDIS_PORT + '/0'
+CELERY_BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600}
+CELERY_RESULT_BACKEND = 'redis://' + REDIS_HOST + ':' + REDIS_PORT + '/0'
+CELERY_ACCEPT_BACKEND = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+# подлючение системы оплаты
+
+Configuration.configure(
+    Environment.Sandbox,
+    BRAINTREE_MERCHANT_ID,
+    BRAINTREE_PUBLIC_KEY,
+    BRAINTREE_PRIVATE_KEY
+)

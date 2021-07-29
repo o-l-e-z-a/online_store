@@ -1,18 +1,18 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as OrigUserAdmin
 from django.http import HttpResponse
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 
 import csv
 
 import datetime
 
-from django.urls import reverse
-from django.utils.safestring import mark_safe
-
 from .models import Category, Brand, Product, Address, User, Cart, Order
 
 
 def export_to_csv(modeladmin, request, queryset):
+    """ функция для экспорта выборки данных в csv"""
     opts = modeladmin.model._meta
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment;filename={}.csv'.format(opts)
@@ -33,12 +33,12 @@ def export_to_csv(modeladmin, request, queryset):
     return response
 
 
-def order_pdf(obj):
-    return mark_safe('<a href="{}">PDF</a>'.format(
-        reverse('orders:admin_order_pdf', args=[obj.id])))
+# def order_pdf(obj):
+#     return mark_safe('<a href="{}">PDF</a>'.format(
+#         reverse('orders:admin_order_pdf', args=[obj.id])))
 
 
-order_pdf.short_description = 'Invoice'
+# order_pdf.short_description = 'Invoice'
 export_to_csv.short_description = 'Export to CSV'
 
 

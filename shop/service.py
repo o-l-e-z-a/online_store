@@ -1,9 +1,9 @@
 from decimal import Decimal
 
-from django.db.models import ExpressionWrapper, F, DecimalField, Sum
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
+from django.db.models import ExpressionWrapper, F, DecimalField, Sum
 from django.contrib.postgres.search import SearchVector, SearchRank, SearchQuery
 
 from .models import Product, Cart
@@ -51,15 +51,18 @@ def product_search(query_params):
 
 
 def get_product_sum(user):
+    """ размер стоимости по каждой товарной позиции (цена * кол-во) """
     return Cart.objects.filter(customer=user, order__isnull=True).select_related('product').annotate(
         sum=ExpressionWrapper(F('product__price') * F('quantity'), output_field=DecimalField()))
 
 
 def get_products_total_sum(user):
+    """ расчет стоимости заказа"""
     return get_product_sum(user).aggregate(
         final_cost=Sum('sum', output_field=DecimalField()), count=Sum('quantity')
     )
 
 
 def get_sale(coupon, total_sum):
+    """ размер скидки"""
     return (coupon.discount / Decimal('100')) * total_sum

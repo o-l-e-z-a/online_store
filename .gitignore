@@ -8,3 +8,4 @@ shop/*.json
 Procfile
 runtime.txt
 /.coverage
+/online_store/locale_settings.py

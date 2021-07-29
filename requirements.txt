@@ -40,3 +40,4 @@ zipp==3.4.1
 
 celery>=5.1.2
 braintree>=4.11.0
+redis>=3.5.3

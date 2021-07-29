@@ -1,6 +1,5 @@
-from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404
-from django.core.mail import send_mail
+
 from rest_framework import permissions, filters
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, ViewSet
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
@@ -14,13 +13,12 @@ from .serializers import (
     ProductForCategoryListSerializer,
     CartReadSerializer,
     CartCreateUpdateSerializer,
-    OrderDetailSerializer,
+    OrderReadSerializer,
     OrderCreateSerializer,
 )
 from .service import PaginationProductForCategory, PaginationSearch, product_search, get_product_sum, \
     get_products_total_sum, get_sale
-from .models import Address, Category, Product, Cart, Order
-from .tasks import cart_created
+from .models import Address, Category, Product, Order
 
 from coupons.models import Coupon
 
@@ -109,12 +107,11 @@ class CartModelViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         product = get_object_or_404(Product, pk=self.kwargs['pk'])
-        cart_created.delay(self.kwargs['pk'])
         serializer.save(customer=self.request.user, product=product)
 
 
 class ShortCartModelViewSet(ViewSet):
-    """ Краткая корзина """
+    """ Просмтор краткой информации о  корзине """
     permission_classes = [permissions.IsAuthenticated]
 
     def list(self, request):
@@ -126,8 +123,10 @@ class ShortCartModelViewSet(ViewSet):
 
 
 class OrderViewSet(ModelViewSet):
+    """
+    Просмотр и добавление заказа
+    """
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = OrderDetailSerializer
 
     def get_queryset(self):
         return Order.objects.filter(customer=self.request.user).select_related('address', 'customer'). \
@@ -137,7 +136,7 @@ class OrderViewSet(ModelViewSet):
         if self.action == 'create':
             return OrderCreateSerializer
         else:
-            return OrderDetailSerializer
+            return OrderReadSerializer
 
     def perform_create(self, serializer):
         total_sum = get_products_total_sum(self.request.user)['final_cost']
@@ -145,10 +144,11 @@ class OrderViewSet(ModelViewSet):
         try:
             coupon = Coupon.objects.get(pk=coupon_id)
         except Coupon.DoesNotExist:
-            sale = 0
             serializer.save(customer=self.request.user, price=total_sum)
         else:
             sale = get_sale(coupon, total_sum)
             final_price = total_sum - sale
             serializer.save(customer=self.request.user, price=final_price, coupon=coupon, discount=coupon.discount)
-        self.request.session['order_id'] = serializer.data.get('id')
+
+        order_id = serializer.data.get('id')
+        self.request.session['order_id'] = order_id

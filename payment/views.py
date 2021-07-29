@@ -1,13 +1,16 @@
 import braintree
+
 from django.shortcuts import get_object_or_404
+
 from rest_framework import permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
+
 from shop.models import Order
-from django.http import HttpResponse
 
 
 class Token(APIView):
+    """ получение токена для оплаты"""
 
     def get(self, request):
         token = braintree.ClientToken.generate()
@@ -15,6 +18,7 @@ class Token(APIView):
 
 
 class Checkout(APIView):
+    """ Оплата заказа"""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
@@ -22,14 +26,11 @@ class Checkout(APIView):
         order = get_object_or_404(Order, id=order_id)
 
         received_json_data = request.data
-        # print(request.data)
-        # received_params = received_json_data.get("params")
         nonce_from_the_client = received_json_data.get("payment_method_nonce",
                                                     "none")
         print(nonce_from_the_client)
         result = braintree.Transaction.sale({
             "amount": order.price,
-            # "payment_method_nonce": nonce_from_the_client,
             "credit_card": {
                 "number": "5105105105105100",
                 "expiration_date": "05/2011",
@@ -40,10 +41,9 @@ class Checkout(APIView):
             }
         })
 
-
         if result.is_success or result.transaction:
             order.paid = True
-            # Сохранение ID транзакции взаказе.
+            # Сохранение ID транзакции в заказе
             order.braintree_id = result.transaction.id
             order.save()
             return Response({'message': 'good'}, status=200)

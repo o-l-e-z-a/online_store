@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 
 class CouponApply(APIView):
+    """  Обработка ввода  скидочного купона """
 
     def post(self, request):
         now = timezone.now()

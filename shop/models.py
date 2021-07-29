@@ -45,6 +45,9 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
+    """
+        Расширенная модель пользователя
+    """
     first_name = models.CharField('Имя пользователя', max_length=32)
     last_name = models.CharField('Фамилия пользователя', max_length=32)
     email = models.EmailField('E-mail', max_length=96, unique=True)
@@ -64,6 +67,9 @@ class User(AbstractUser):
 
 
 class Address(models.Model):
+    """
+        Модель адреса пользователя
+    """
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='Покупатель', on_delete=models.CASCADE)
     city = models.CharField('Город', max_length=32)
     street_name = models.CharField('Название улицы', max_length=64)
@@ -81,6 +87,9 @@ class Address(models.Model):
 
 
 class Category(models.Model):
+    """
+        Модель категорий
+    """
     parent = models.ForeignKey(
         'self', verbose_name='Родитель', on_delete=models.CASCADE, null=True, blank=True, related_name="children"
     )
@@ -100,6 +109,9 @@ class Category(models.Model):
 
 
 class Brand(models.Model):
+    """
+        Модель бренда
+    """
     name = models.CharField('Название', max_length=255)
 
     def __str__(self):
@@ -111,6 +123,9 @@ class Brand(models.Model):
 
 
 class Product(models.Model):
+    """
+        Модель товаров магазина
+    """
     name = models.CharField('Название', max_length=255)
     brand = models.ForeignKey(Brand, verbose_name='Бренд', on_delete=models.CASCADE, null=True)
     description = models.TextField('Описание', null=True, blank=True)
@@ -126,6 +141,9 @@ class Product(models.Model):
 
 
 class Cart(models.Model):
+    """
+        Модель корзины
+    """
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='Покупатель', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, verbose_name='Товар', on_delete=models.CASCADE)
     quantity = models.IntegerField('Количество')
@@ -142,6 +160,9 @@ class Cart(models.Model):
 
 
 class Order(models.Model):
+    """
+        Модель заказа
+    """
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name='Покупатель', on_delete=models.CASCADE)
     address = models.ForeignKey(Address, verbose_name='Адрес', on_delete=models.CASCADE)
     price = models.DecimalField('Стоимость', max_digits=12, decimal_places=2)
@@ -161,5 +182,4 @@ class Order(models.Model):
     class Meta:
         verbose_name = 'Заказ'
         verbose_name_plural = 'Заказы'
-
 
