@@ -93,7 +93,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_recommended(self, obj):
         """ получение рекомендуемых товаров"""
         r = Recommender()
-        recommended_products = r.suggest_products_for([obj, Product.objects.get(pk=355299)], 4)
+        recommended_products = r.suggest_products_for([obj], 4)
         serializer = ProductForCategoryListSerializer(recommended_products, many=True)
         return serializer.data
 
