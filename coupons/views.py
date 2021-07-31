@@ -21,5 +21,5 @@ class CouponApply(APIView):
                 return Response({'message': 'accept coupon'}, status=status.HTTP_200_OK)
             except Coupon.DoesNotExist:
                 request.session['coupon_id'] = None
-        return Response({'message': 'coupon does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'message': 'coupon does not valid'}, status=status.HTTP_404_NOT_FOUND)
 
