@@ -1,12 +1,16 @@
+from datetime import timedelta
+
 from decimal import Decimal
 
 from django.urls import reverse
+from django.utils import timezone
 
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from .models import Brand, Cart, Category, Product, Address, User
+from coupons.models import Coupon
+from .models import Brand, Cart, Category, Product, Address, User, Order
 
 
 class ShopTests(APITestCase):
@@ -62,6 +66,17 @@ class ShopTests(APITestCase):
 
         self.cart = Cart.objects.create(customer=user_test1, product=self.product1, quantity=2)
         self.cart.save()
+
+        self.order = Order.objects.create(customer=user_test1, address=self.address1, price=self.product1.price * 2)
+        self.order.save()
+
+        self.coupon = Coupon.objects.create(
+            code='TEST_CODE',
+            valid_from=timezone.now() - timedelta(1),
+            valid_to=timezone.now() + timedelta(2),
+            discount=20,
+            active=True,
+        )
 
     def test_addresses_list(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.user_test1_token.key)
@@ -261,4 +276,28 @@ class ShopTests(APITestCase):
             'telephone': 'test5'
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_add_order(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.user_test1_token.key)
+        response = self.client.post(
+            reverse('order_add'),
+            {'address': self.address1.pk},
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_add_order_with_coupon(self):
+        response = self.client.post(reverse('apply'), {'code': 'TEST_CODE'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.user_test1_token.key)
+        response = self.client.post(
+            reverse('order_add'),
+            {'address': self.address1.pk},
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        order = self.client.get(reverse('order_list'), format='json')
+        self.assertEqual(len(order.data), 2)
+        self.assertEqual(order.json()[1].get('discount'), 20)
+        self.assertEqual(Decimal(order.json()[1].get('price')), self.product1.price*2*Decimal('0.8'))
 

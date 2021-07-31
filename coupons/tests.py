@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.utils import timezone
 from rest_framework.test import APITestCase
 from rest_framework import status
 
@@ -9,7 +10,7 @@ from shop.models import Brand, Cart, Category, Product, Address, User, Order
 
 from .models import Coupon
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 class CouponTest(APITestCase):
 
@@ -45,8 +46,8 @@ class CouponTest(APITestCase):
 
         self.coupon = Coupon.objects.create(
             code='TEST_CODE',
-            valid_from=datetime.now()-timedelta(1),
-            valid_to=datetime.now()+timedelta(2),
+            valid_from=timezone.now() - timedelta(1),
+            valid_to=timezone.now() + timedelta(2),
             discount=20,
             active=True,
         )
