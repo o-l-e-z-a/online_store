@@ -1,0 +1,47 @@
+version: '3.3'
+
+services:
+  db:
+    image: postgres:12.0-alpine
+    volumes:
+      - online_store_postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: postgres
+      POSTGRES_DB: online_store
+  django:
+    container_name: online_store
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    command: bash -c "python /usr/src/online_store/manage.py makemigrations coupons --noinput &&
+                      python /usr/src/online_store/manage.py makemigrations shop --noinput &&
+                      python /usr/src/online_store/manage.py migrate --noinput &&
+                      python /usr/src/online_store/manage.py runserver 0.0.0.0:8000 "
+    volumes:
+      - .:/usr/src/online_store
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - ./.env.docker
+
+  celery:
+    build: .
+    command: celery  -A online_store worker -l info
+    volumes:
+      - ./project:/usr/src/app
+    depends_on:
+      - django
+      - redis
+    env_file:
+      - ./.env.docker
+
+
+  redis:
+    image: redis:6-alpine
+
+volumes:
+  online_store_postgres_data:

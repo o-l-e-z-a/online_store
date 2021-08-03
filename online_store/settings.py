@@ -2,21 +2,14 @@ import os
 
 from braintree import Configuration, Environment
 
-from .locale_settings import (EMAIL_HOST_USER,
-                              EMAIL_HOST_PASSWORD,
-                              BRAINTREE_PRIVATE_KEY,
-                              BRAINTREE_MERCHANT_ID,
-                              BRAINTREE_PUBLIC_KEY
-                              )
 
+SECRET_KEY = os.environ.get("SECRET_KEY")
+
+DEBUG = bool(int(os.environ.get("DEBUG", default=1)))
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-SECRET_KEY = os.getenv('SECRET_KEY')
-
-DEBUG = True
-
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 
 
 INSTALLED_APPS = [
@@ -72,12 +65,12 @@ WSGI_APPLICATION = 'online_store.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'online_store',
-        'USER': os.getenv('POSTGRES_USER'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-        'HOST': os.getenv('POSTGRES_HOST'),
-        'PORT': os.getenv('POSTGRES_PORT'),
+        "ENGINE": os.environ.get("DB_ENGINE"),
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER", "user"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "password"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
 
@@ -136,18 +129,19 @@ INTERNAL_IPS = [
     '127.0.0.1',
 ]
 
-
 # подлючение SMTP-сервера
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
 # подлючение редис
-REDIS_HOST = '127.0.0.1'
-REDIS_PORT = '6379'
-REDIS_DB = 1
-# подлючение системы оплаты
+REDIS_HOST = os.environ.get('REDIS_HOST')
+REDIS_PORT = os.environ.get('REDIS_PORT')
+REDIS_DB = os.environ.get('REDIS_DB')
 
+# подлючение системы оплаты
 CELERY_BROKER_URL = 'redis://' + REDIS_HOST + ':' + REDIS_PORT + '/0'
 CELERY_BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600}
 CELERY_RESULT_BACKEND = 'redis://' + REDIS_HOST + ':' + REDIS_PORT + '/0'
@@ -157,9 +151,10 @@ CELERY_RESULT_SERIALIZER = 'json'
 
 # подлючение системы оплаты
 
+
 Configuration.configure(
     Environment.Sandbox,
-    BRAINTREE_MERCHANT_ID,
-    BRAINTREE_PUBLIC_KEY,
-    BRAINTREE_PRIVATE_KEY
+    os.environ.get('BRAINTREE_MERCHANT_ID'),
+    os.environ.get('BRAINTREE_PUBLIC_KEY'),
+    os.environ.get('BRAINTREE_PRIVATE_KEY'),
 )
