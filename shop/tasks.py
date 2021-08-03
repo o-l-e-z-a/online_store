@@ -4,7 +4,7 @@ from online_store.celery import app
 
 from .models import User
 
-from online_store.locale_settings import EMAIL_HOST_USER
+from online_store.settings import EMAIL_HOST_USER
 
 
 @app.task

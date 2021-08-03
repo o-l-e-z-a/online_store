@@ -9,3 +9,5 @@ Procfile
 runtime.txt
 /.coverage
 /online_store/locale_settings.py
+.env
+.env.docker
