@@ -22,7 +22,6 @@
 - Docker <br/>
 
 ## Запуск проекта:
-- git clone https://github.com/o-l-e-z-a/online_store.git <br/>
-- cd online_store <br/>
+- git clone https://github.com/o-l-e-z-a/online_store.git && cd online_store<br/> 
 - создать .env файл со след константами: DEBUG, SECRET_KEY,DJANGO_ALLOWED_HOSTS,DB_ENGINE,DB_DATABASE,DB_USER,DB_PASSWORD,DB_HOST,DB_PORT,REDIS_HOST,REDIS_PORT,REDIS_DB,EMAIL_HOST_USER,EMAIL_HOST_PASSWORD,BRAINTREE_MERCHANT_ID,BRAINTREE_PUBLIC_KEY,BRAINTREE_PRIVATE_KEY
 - docker-compose up --build <br/>
