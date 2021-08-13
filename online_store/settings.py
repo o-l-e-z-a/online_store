@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django_filters',
     'drf_yasg',
 
+    'user_profile',
     'shop',
     'payment',
     'coupons'
@@ -75,7 +76,7 @@ DATABASES = {
 }
 
 #  указываем модель пользователя
-AUTH_USER_MODEL = 'shop.User'
+AUTH_USER_MODEL = 'user_profile.User'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -120,7 +121,7 @@ DJOSER = {
     'ACTIVATION_URL': '#/activate/{uid}/{token}',
     'SEND_ACTIVATION_EMAIL': False,
     'SERIALIZERS': {
-        'user_create': 'shop.serializers.RegistrationSerializer',
+        'user_create': 'user_profile.serializers.RegistrationSerializer',
     },
 }
 SITE_ID = 1
@@ -150,8 +151,6 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
 # подлючение системы оплаты
-
-
 Configuration.configure(
     Environment.Sandbox,
     os.environ.get('BRAINTREE_MERCHANT_ID'),

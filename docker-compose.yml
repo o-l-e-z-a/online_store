@@ -14,7 +14,8 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    command: bash -c "python /usr/src/online_store/manage.py makemigrations coupons --noinput &&
+    command: bash -c "python /usr/src/online_store/manage.py makemigrations user_profile --noinput &&
+                      python /usr/src/online_store/manage.py makemigrations coupons --noinput &&
                       python /usr/src/online_store/manage.py makemigrations shop --noinput &&
                       python /usr/src/online_store/manage.py migrate --noinput &&
                       python /usr/src/online_store/manage.py runserver 0.0.0.0:8000 "
