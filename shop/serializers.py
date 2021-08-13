@@ -1,19 +1,12 @@
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
+
 from rest_framework import serializers
 
-from .models import Category, User, Product, Address, Cart, Order
+from .models import Category, Product, Address, Cart, Order
 from .recommender import Recommender
 from .tasks import order_created
-
-from djoser.serializers import UserCreateSerializer
-
-
-class RegistrationSerializer(UserCreateSerializer):
-    """ Сериализатор для регистрации """
-
-    class Meta(UserCreateSerializer.Meta):
-        fields = ('email', 'telephone', 'first_name', 'last_name', 'date_birthday', 'password')
 
 
 class AddressReadUpdateDeleteSerializer(serializers.ModelSerializer):
@@ -31,7 +24,7 @@ class AddressAddSerializer(serializers.ModelSerializer):
         exclude = ['id', 'customer']
 
     def create(self, validated_data):
-        user = User.objects.get(pk=validated_data.get('customer').pk)
+        user = get_user_model().objects.get(pk=validated_data.get('customer').pk)
         if not validated_data.get('contact_fio'):
             contact_fio = user.last_name + ' ' + user.first_name
             validated_data.update(contact_fio=contact_fio)

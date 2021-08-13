@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
 
@@ -10,7 +11,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
 from coupons.models import Coupon
-from .models import Brand, Cart, Category, Product, Address, User, Order
+from .models import Brand, Cart, Category, Product, Address, Order
 
 
 class ShopTests(APITestCase):
@@ -21,11 +22,11 @@ class ShopTests(APITestCase):
         brand2 = Brand.objects.create(name='Красная цена')
         brand2.save()
 
-        user_test1 = User.objects.create_user(
+        user_test1 = get_user_model().objects.create_user(
             email='test1@test1.ru', password="testPassword1", first_name='test1', last_name='test1', telephone='test1'
         )
         user_test1.save()
-        user_test2 = User.objects.create_user(
+        user_test2 = get_user_model().objects.create_user(
             email='test2@test2.ru', password="testPassword2", first_name='test2', last_name='test2', telephone='test2'
         )
         user_test2.save()
@@ -257,26 +258,6 @@ class ShopTests(APITestCase):
         self.assertEqual(response.data['count'], 2)
         self.assertEqual(response.data['final_cost'], Decimal('70.00'))
 
-    def test_registration(self):
-        response = self.client.post(r'http://127.0.0.1:8000/auth/users/', {
-            'email': 'test5@test5.ru',
-            'password': "testPassword1",
-            'first_name': 'test5',
-            'last_name': 'test5',
-            'telephone': 'test5'
-        }, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-    def test_fail_login_registration(self):
-        response = self.client.post(r'http://127.0.0.1:8000/auth/users/', {
-            'email': 'test1@test1.ru',
-            'password': "testPassword1",
-            'first_name': 'test5',
-            'last_name': 'test5',
-            'telephone': 'test5'
-        }, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
     def test_add_order(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.user_test1_token.key)
         response = self.client.post(
@@ -296,8 +277,10 @@ class ShopTests(APITestCase):
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        c = self.client.session['coupon_id']
+        coupon = Coupon.objects.get(pk=c)
         order = self.client.get(reverse('order_list'), format='json')
         self.assertEqual(len(order.data), 2)
-        self.assertEqual(order.json()[1].get('discount'), 20)
-        self.assertEqual(Decimal(order.json()[1].get('price')), self.product1.price*2*Decimal('0.8'))
+        self.assertEqual(order.json()[0].get('discount'), 20)
+        self.assertEqual(Decimal(order.json()[0].get('price')), self.product1.price*2*Decimal('0.8'))
 

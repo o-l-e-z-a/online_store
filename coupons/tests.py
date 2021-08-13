@@ -1,22 +1,25 @@
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
 from django.utils import timezone
+
 from rest_framework.test import APITestCase
 from rest_framework import status
 
 from django.urls import reverse
 
-from shop.models import Brand, Cart, Category, Product, Address, User, Order
+from shop.models import Brand, Cart, Category, Product, Address, Order
 
 from .models import Coupon
 
 from datetime import timedelta
 
+
 class CouponTest(APITestCase):
 
     def setUp(self) -> None:
 
-        user_test1 = User.objects.create_user(
+        user_test1 = get_user_model().objects.create_user(
             email='test1@test1.ru', password="testPassword1", first_name='test1', last_name='test1', telephone='test1'
         )
         user_test1.save()
